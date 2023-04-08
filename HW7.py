@@ -53,6 +53,8 @@ def make_positions_table(data, cur, conn):
 #     created for you -- see make_positions_table above for details.
 
 def make_players_table(data, cur, conn):
+    # Create Players table if it does not exist
+    cur.execute("CREATE TABLE IF NOT EXISTS Players (id INTEGER PRIMARY KEY, name TEXT, position_id INTEGER, birthyear INTEGER, nationality TEXT)")
     # First, we need to get the position ids from the Positions table
     cur.execute("SELECT * FROM Positions")
     positions = {row[1]: row[0] for row in cur.fetchall()}
@@ -62,9 +64,14 @@ def make_players_table(data, cur, conn):
         name = player['name']
         position = player['position']
         position_id = positions[position]
-        birthyear = player['birthyear']
+        birthyear = player['dateOfBirth'][:4]
         nationality = player['nationality']
-        cur.execute("INSERT INTO Players (id, name, position_id, birthyear, nationality) VALUES (?,?,?,?,?)",(player['id'], name, position_id, birthyear, nationality))
+        cur.execute("SELECT * FROM Players WHERE id=?", (player['id'],))
+        existing_player = cur.fetchone()
+
+        if existing_player is None:
+            # If the player doesn't already exist, insert a new row with their information
+            cur.execute("INSERT INTO Players (id, name, position_id, birthyear, nationality) VALUES (?,?,?,?,?)",(player['id'], name, position_id, birthyear, nationality))
 
     # Commit the changes to the database
     conn.commit()
@@ -112,6 +119,10 @@ def birthyear_nationality_search(age, country, cur, conn):
 
     # Execute the SQL query to get all players from the specified country born before the cutoff year
     cur.execute("SELECT name, nationality, birthyear FROM Players WHERE nationality = ? AND birthyear < ?", (country, birth_year_cutoff))
+
+    # Fetch all the results and return them as a list of tuples
+    results = cur.fetchall()
+    return results
 
 ## [TASK 4]: 15 points
 # finish the function position_birth_search
