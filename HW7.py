@@ -53,7 +53,21 @@ def make_positions_table(data, cur, conn):
 #     created for you -- see make_positions_table above for details.
 
 def make_players_table(data, cur, conn):
-    pass
+    # First, we need to get the position ids from the Positions table
+    cur.execute("SELECT * FROM Positions")
+    positions = {row[1]: row[0] for row in cur.fetchall()}
+
+    # Then, we can iterate over the players in the squad and insert them into the Players table
+    for player in data['squad']:
+        name = player['name']
+        position = player['position']
+        position_id = positions[position]
+        birthyear = player['birthyear']
+        nationality = player['nationality']
+        cur.execute("INSERT INTO Players (id, name, position_id, birthyear, nationality) VALUES (?,?,?,?,?)",(player['id'], name, position_id, birthyear, nationality))
+
+    # Commit the changes to the database
+    conn.commit()
 
 ## [TASK 2]: 10 points
 # Finish the function nationality_search
@@ -66,7 +80,15 @@ def make_players_table(data, cur, conn):
         # the player's name, their position_id, and their nationality.
 
 def nationality_search(countries, cur, conn):
-    pass
+    # Build a comma-separated list of countries for the SQL query
+    country_list = ",".join(["'{}'".format(c) for c in countries])
+
+    # Execute the SQL query to get all players from the specified countries
+    cur.execute("SELECT Players.name, Players.position_id, Players.nationality FROM Players WHERE nationality IN ({})".format(country_list))
+
+    # Fetch all the results and return them as a list of tuples
+    results = cur.fetchall()
+    return results
 
 ## [TASK 3]: 10 points
 # finish the function birthyear_nationality_search
@@ -85,7 +107,11 @@ def nationality_search(countries, cur, conn):
 
 
 def birthyear_nationality_search(age, country, cur, conn):
-    pass
+    # Calculate the birth year cutoff based on the age passed in
+    birth_year_cutoff = 2023 - age
+
+    # Execute the SQL query to get all players from the specified country born before the cutoff year
+    cur.execute("SELECT name, nationality, birthyear FROM Players WHERE nationality = ? AND birthyear < ?", (country, birth_year_cutoff))
 
 ## [TASK 4]: 15 points
 # finish the function position_birth_search
@@ -105,7 +131,15 @@ def birthyear_nationality_search(age, country, cur, conn):
     # HINT: You'll have to use JOIN for this task.
 
 def position_birth_search(position, age, cur, conn):
-       pass
+    # Calculate the birth year cutoff based on the age passed in
+    birth_year_cutoff = 2023 - age
+
+    # Execute the SQL query to get all players who play the specified position and were born after the cutoff year
+    cur.execute("SELECT Players.name, Positions.position, Players.birthyear FROM Players JOIN Positions ON Players.position_id = Positions.id WHERE Positions.position = ? AND Players.birthyear > ?", (position, birth_year_cutoff))
+
+    # Fetch all the results and return them as a list of tuples
+    results = cur.fetchall()
+    return results
 
 
 # [EXTRA CREDIT]
