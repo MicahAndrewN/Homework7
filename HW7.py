@@ -1,8 +1,8 @@
 
-# Your name:
-# Your student id:
-# Your email:
-# List who you have worked with on this project:
+# Your name: Micah Nelson
+# Your student id: 0168 2458
+# Your email: micahn@umich.edu
+# List who you have worked with on this project: N/A
 
 import unittest
 import sqlite3
